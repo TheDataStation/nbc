@@ -44,6 +44,7 @@ $> bash build.sh
 #### Deploying Elasticsearch (tested with 6.0.0)
 
 Download the software (note the currently supported version is 6.0.0) from:
+[needs to be 6.0.0, not the latest at the time that I'm writing... the latest is 7.1.something, but that will only talk protoocl back to 6.8.0, but python requirements.txt stack uses 6.0.0 protocol]
 
 https://www.elastic.co/products/elasticsearch
 
@@ -171,7 +172,7 @@ Some notes for Mac users:
 
 If you run within a virtualenvironment, Matplotlib will fail due to a mismatch with the backend it wants to use. A way of fixing this is to create a file: *~/.matplotlib/matplotlibrc* and add a single line: *backend: TkAgg*.
 
-Note you need to use elasticsearch 6.0.0 in the current version. [exactly 6.0.0 or >=6.0.0?]
+Note you need to use elasticsearch 6.0.0 in the current version. [exactly 6.0.0 or >=6.0.0? pretty much, exactly 6.0.0]
 
 #### Deployment
 
