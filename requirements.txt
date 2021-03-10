@@ -17,7 +17,12 @@ defusedxml==0.5.0
 Django==1.10.5
 editdistance==0.2
 elasticsearch==6.0.0
-elasticsearch-dsl==2.0.0
+# elasticsearch-dsl says it must line up with the major version of elasticsearch,
+# and there is a conflict because of that at pip install time. yue's pip list has
+# elasticsearch 6 and elasticsearch-dsl 2 installed, perhaps by not having a clean
+# everything-from-requirements install (because pip will let you do that). So try
+# commenting it out entirely:
+# elasticsearch-dsl==2.0.0
 entrypoints==0.2.3
 Flask==1.0.2
 Flask-Cors==2.1.2
@@ -56,7 +61,8 @@ pandas==0.19.2
 pandocfilters==1.4.2
 path.py==8.1.2
 pbr==1.10.0
-pdb==0.1
+# pdb not present in yue's pip list
+# pdb==0.1
 pexpect==4.0.1
 pickleshare==0.5
 prometheus-client==0.3.1
@@ -75,7 +81,8 @@ pyzmq==17.1.2
 qtconsole==4.1.1
 rdflib==4.2.2
 rdflib-jsonld==0.4.0
-readline==6.2.4.1
+# This is not present in yue's pip list
+# readline==6.2.4.1
 redis==2.10.5
 requests==2.13.0
 scikit-learn==0.19.1
@@ -91,8 +98,8 @@ testpath==0.3.1
 tornado==4.3
 tqdm==4.26.0
 traitlets==4.3.2
-urllib3==1.15.1
-uWSGI==2.0.12
+urllib3==1.22
+uWSGI==2.0.19.1
 webencodings==0.5
 Werkzeug==0.14.1
 yappi==0.94

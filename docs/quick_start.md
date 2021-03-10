@@ -1,8 +1,8 @@
 ## Quick Start
 
 ```shell
-git clone git@github.com:mitdbg/aurum-datadiscovery.git
-cd aurum-datadiscovery
+git clone git@github.com:TheDataStation/aurum-dod-staging.git
+cd aurum-dod-staging
 ```
 
 We explain next how to configure the modules to get a barebones installation. We
@@ -19,6 +19,23 @@ to install and configure Elasticsearch.
 
 You will need JVM 8 available in the system for this step. From the root directory go to 'ddprofiler' and do:
 
+BENC: this seems to download a super-old version of gradle which doesn't like openjdk
+v11, and gives this error:
+
+```
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Could not determine java version from '11.0.9.1'.
+```
+
+There's a closed gradle issue that this was fixed by gradle 4.10.3
+What was downloaded by this script was gradle 2.13.
+https://github.com/gradle/gradle/issues/8671 
+
+So is this *exactly* JVM 8, or should gradle be updated?
+
+
 ```shell
 $> cd ddprofiler
 $> bash build.sh 
@@ -30,7 +47,7 @@ Download the software (note the currently supported version is 6.0.0) from:
 
 https://www.elastic.co/products/elasticsearch
 
-Uncompress it and then simply run from the root directory:
+Uncompress it and then run from the root directory:
 
 ```shell
 $> ./bin/elasticsearch
@@ -43,7 +60,7 @@ you should use to configure ddprofiler as we show next.
 
 There are two different ways of interacting with the profiler. One is through a
 YAML file, which describes and configures the different data sources to profile.
-The second way is through an interactice interface which we are currently
+The second way is through an interactive interface which we are currently
 working on. We describe next the configuration of sources through the YAML file.
 
 The jar file produced in the previous step accepts a number of flags, of which
@@ -90,27 +107,71 @@ briefly explain next the requirements for running the model builder.
 virtualenv) so that you can quickly wipeout the environment if you no longer
 need it without affecting any system-wide dependencies.* 
 
-Requires Python 3 (tested with 3.4, 3.5 and 3.6). Use requirements.txt to
+In a Debian-based Linux system, the following packages will need to be installed system-wide:
+[maybe before that requirements.txt install? in which case this stanza should be before the pip install stanza]
+
+```shell
+sudo apt-get install \
+     pkg-config libpng-dev libfreetype6-dev `#(requirement of matplotlib)` \
+     libblas-dev liblapack-dev `#(speeding up linear algebra operations)` \
+     lib32ncurses5-dev 
+  and these for compiling the python stack:
+     [libpq-dev] [python3-dev]
+```
+
+Requires Python 3 (tested with 3.4, 3.5 and 3.6 [i'm using 3.7 because welcome to the future]). Use requirements.txt to
 install all the dependencies:
 
 ```shell
 $> pip install -r requirements.txt
 ```
 
-In a vanilla linux (debian-based) system, the following packages will need to be installed system-wide:
+[This fails with: ERROR: Could not find a version that satisfies the requirement pdb==0.1
+- pdb==0.1 is explicitly specified in requirements.txt.
 
-```shell
-sudo apt-get install \
-     pkg-config libpng-dev libfreetype6-dev `#(requirement of matplotlib)` \
-     libblas-dev liblapack-dev `#(speeding up linear algebra operations)` \
-     lib32ncurses5-dev
+is that referring to pdb in the default python install? I've asked yue.
+
+psycopg2 fails to install - looks like its missing some non-python pre-req. it wants pg_config as an executable - which is in libpq-dev in debian
+]
+
+[now I hit a conflict between:
+   elastic-search and explicitly pinned library versions:
+```
+The conflict is caused by:
+    The user requested urllib3==1.15.1
+    elasticsearch 6.0.0 depends on urllib3<1.23 and >=1.21.1
 ```
 
-Some notes for MAC users:
+Maybe i can remove that urllib3 pin?
+]
 
-If you run within a virtualenvironemtn, Matplotlib will fail due to a mismatch with the backend it wants to use. A way of fixing this is to create a file: *~/.matplotlib/matplotlibrc* and add a single line: *backend: TkAgg*.
+[next I hit this requirements problem:
+The conflict is caused by:
+    The user requested elasticsearch==6.0.0
+    elasticsearch-dsl 2.0.0 depends on elasticsearch<3.0.0 and >=2.0.0
 
-Note you need to use elasticsearch 6.0.0 in the current version.
+remove version requirements on elasticsearch and elasticsearch-dsl? what is that going to break?
+
+]
+
+[
+some stuff fails because it can't find Python.h - this needs, on debian, python3-dev
+
+]
+
+[next some stuff with readline.. which google search seems to think is terribly dated because python has better readline support built in now? (which i haven't verified...) but lets just delete the readline and gnureadline dependencies from requirements.txt]
+
+[matplotlib needs g++]
+
+[wtf is line-profiler needed for in requirements? it's breaking even pipgrip to explore dependencies, with what looks like a C API being out of date. delete this in an attempt to get pipgrip running. it was pinned at a crazy old version.]
+
+[numpy version pin maybe causing conflicts too? likewise pandas. remove the version pins on both of those and scikit-learn]
+
+Some notes for Mac users:
+
+If you run within a virtualenvironment, Matplotlib will fail due to a mismatch with the backend it wants to use. A way of fixing this is to create a file: *~/.matplotlib/matplotlibrc* and add a single line: *backend: TkAgg*.
+
+Note you need to use elasticsearch 6.0.0 in the current version. [exactly 6.0.0 or >=6.0.0?]
 
 #### Deployment
 
