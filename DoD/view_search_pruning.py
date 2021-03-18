@@ -93,11 +93,13 @@ class ViewSearchPruning:
         st_stage2 = time.time()
         # We group now into groups that convey multiple filters.
         # Obtain list of tables ordered from more to fewer filters.
+        
         table_fulfilled_filters = defaultdict(list)
         table_nid = dict()  # collect nids -- used later to obtain an access path to the tables
         for filter, hits in filter_drs.items():
             for hit in hits:
                 table = hit.source_name
+                print(f"BENC5: table {table}")
                 nid = hit.nid
                 table_nid[table] = nid
                 if filter[2] not in [id for _, _, id in table_fulfilled_filters[table]]:
@@ -142,6 +144,7 @@ class ViewSearchPruning:
             while go_on:
                 candidate_group_unordered = []
                 candidate_group_filters_covered = set()
+                print(f"BENC: table_fulfilled_filters = {list(table_fulfilled_filters.items())}")
                 for i in range(len(list(table_fulfilled_filters.items()))):
                     table_pivot, filters_pivot = list(table_fulfilled_filters.items())[i]
                     # Eagerly add pivot
@@ -151,16 +154,19 @@ class ViewSearchPruning:
                     # if len(candidate_group_filters_covered) == len(filter_drs.items()):
                     if covers_filters(candidate_group_filters_covered):
                         candidate_group = sort_candidate_group(candidate_group_unordered)
-                        # print("1: " + str(table_pivot))
+                        print("1: " + str(table_pivot))
                         yield (candidate_group, candidate_group_filters_covered)  # early stop
                         # Cleaning
                         clear_state()
                         continue
+                    print("BENC1")
                     for j in range(len(list(table_fulfilled_filters.items()))):
+                        print("BENC2")
                         idx = i + j + 1
                         if idx == len(table_fulfilled_filters.items()):
                             break
                         table, filters = list(table_fulfilled_filters.items())[idx]
+                        print(f"BENC table = {table}")
                         # new_filters = len(set(filters).union(candidate_group_filters_covered)) - len(candidate_group_filters_covered)
                         new_filters = compute_size_filter_ix(filters, candidate_group_filters_covered)
                         if new_filters > 0:  # add table only if it adds new filters
@@ -169,6 +175,7 @@ class ViewSearchPruning:
                             if covers_filters(candidate_group_filters_covered):
                                 candidate_group = sort_candidate_group(candidate_group_unordered)
                                 # print("2: " + str(table_pivot))
+                                print(f"BENC: yielding {candidate_group}")
                                 yield (candidate_group, candidate_group_filters_covered)
                                 clear_state()
                                 # Re-add the current pivot, only necessary in this case
@@ -201,7 +208,7 @@ class ViewSearchPruning:
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             num_candidate_groups += 1
             print("")
-            print("Candidate group: " + str(candidate_group))
+            print("(B)Candidate group: " + str(candidate_group))
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
             print("Covers #Filters: " + str(num_unique_filters))
 

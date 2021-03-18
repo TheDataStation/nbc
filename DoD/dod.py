@@ -230,7 +230,7 @@ class DoD:
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             num_candidate_groups += 1
             print("")
-            print("Candidate group: " + str(candidate_group))
+            print("(A)Candidate group: " + str(candidate_group))
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
             print("Covers #Filters: " + str(num_unique_filters))
 

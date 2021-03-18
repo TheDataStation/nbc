@@ -53,9 +53,9 @@ class DOD_API:
         print("total views:", i)
 
 if __name__ == '__main__':
-    path_model = "/Users/gongyue/aurum-datadiscovery/test/advwModels/"
+    path_model = "./test/"
     separator = ","
-    output_path = "/Users/gongyue/aurum-datadiscovery/test/advwResult/"
+    output_path = ".//testres/"
     api = DOD_API(path_model, output_path, separator)
 
     attrs = ["", "", ""]
@@ -64,4 +64,4 @@ if __name__ == '__main__':
               ["Gary", "Altman", "Facilities Manager"]]
 
 
-    api.get_topk_views(attrs, values, 5)
+    api.get_topk_views(attrs, values, 1)
