@@ -64,4 +64,4 @@ if __name__ == '__main__':
               ["Gary", "Altman", "Facilities Manager"]]
 
 
-    api.get_topk_views(attrs, values, 1)
+    api.get_topk_views(attrs, values, 5)
