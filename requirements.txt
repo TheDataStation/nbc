@@ -63,7 +63,9 @@ matplotlib>=3.1.1
 mock>=2.0.0
 # nbconvert==5.4.0 # not explicit
 # nbformat==4.4.0 # not explicit
-networkx>=1.11
+# the latest version of the (2.5) doesn't work with this code
+# so constrain to exactly yue's version
+networkx==1.11
 nltk>=3.1
 # normality==0.2.4 # not explicit
 # notebook==5.7.0  not explicit
@@ -109,7 +111,10 @@ redis>=2.10.5
 # loosen this constraint because the
 # exact version was too low for blindml's
 # constraints.
+# however, there are API changes, so push
+# this up to something closer to what blindml uses.
 # scikit-learn>=0.19.1
+scikit-learn>=0.24.1
 scipy>=1.0.0
 # Send2Trash==1.5.0
 # simplegeneric==0.8.1
