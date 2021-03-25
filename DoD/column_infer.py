@@ -4,7 +4,10 @@ from DoD import data_processing_utils as dpu
 from api.apiutils import DRS, Operation, OP
 from DoD import view_search_4c as v4c
 from collections import defaultdict
-
+from tabulate import tabulate
+from DoD.colors import Colors
+import ipywidgets as widgets
+from IPython.display import display, clear_output
 
 class ClusterItem:
     nid = ""
@@ -393,7 +396,7 @@ class ColumnInfer:
                 # tmp["sample_score"], max_column = self.get_containment_score(cluster)
                 tmp["sample_score"] = 0
                 # tmp["data"] = list(map(lambda x: (x.nid, x.source_name, x.field_name, x.tfidf_score), cluster))
-                tmp["data"] = list(map(lambda x: (x.nid, x.source_name, x.field_name, x.sample_score, x.highlight), cluster))
+                tmp["data"] = list(map(lambda x: (x.nid, x.source_name, x.field_name, x.sample_score), cluster))
                 # tmp["type"] = data_type.name
                 tmp["type"] = "object"
                 # tmp["head_values"] = list(set(max_column.highlight)) + head_values
@@ -403,6 +406,31 @@ class ColumnInfer:
             attr_clusters.append(sorted_list)
             idx += 1
         return attr_clusters
+    
+    def show_clusters(self, clusters, filter_drs, viewSearch, column_idx):
+        def on_button_confirm(b):
+            selected_data = []
+            for i in range(0, len(checkboxes)):
+                if checkboxes[i].value == True:
+                    selected_data.append(i)
+            print(selected_data)
+            hits = viewSearch.clusters2Hits(clusters, selected_data)
+            filter_drs[(clusters[0]["name"], FilterType.ATTR, column_idx)] = hits
+        def on_button_all(b):
+            for checkbox in checkboxes:
+                checkbox.value = True
+
+        print(Colors.OKBLUE + "NAME: " + clusters[0]["name"] + Colors.CEND)
+        checkboxes = [widgets.Checkbox(value=False, description="Cluster "+str(idx)) for idx in range(len(clusters))]
+        for idx, cluster in enumerate(clusters):
+            display(checkboxes[idx])
+            print(tabulate(cluster["data"], headers=['id', 'Table Name', 'Attribute Name', 'Sample Score', 'Highlight'], tablefmt='fancy_grid'))
+            print('\n')
+        button_confirm = widgets.Button(description="Confirm")
+        button_all = widgets.Button(description="Select All")
+        button_confirm.on_click(on_button_confirm)
+        button_all.on_click(on_button_all)
+        display(widgets.HBox([button_confirm, button_all]))
 
     def evaluation(self, attrs, values, gt_path):
         candidate_columns, sample_score, hit_type_dict, match_dict = self.infer_candidate_columns(attrs, values)

@@ -81,15 +81,15 @@ class ViewSearchPruning:
         return hits
 
     def virtual_schema_iterative_search(self, list_samples, filter_drs, perf_stats, max_hops=2, debug_enumerate_all_jps=False, offset=10):
-        msg_enumerate = """
-                    ######################################################################
-                    #                  Begin Join Path Enumeration                       #
-                    #    Find all join paths between every pair of candidate tables      #
-                    #    based on Aurum API. (No known PK/FK relationships, depend on    #
-                    #    inclusion dependency to discover approximate PK/FK)       f      #  
-                    ######################################################################
-        """
-        print(msg_enumerate)
+        # msg_enumerate = """
+        #             ######################################################################
+        #             #                  Begin Join Path Enumeration                       #
+        #             #    Find all join paths between every pair of candidate tables      #
+        #             #    based on Aurum API. (No known PK/FK relationships, depend on    #
+        #             #    inclusion dependency to discover approximate PK/FK)       f      #
+        #             ######################################################################
+        # """
+        # print(msg_enumerate)
         st_stage2 = time.time()
         # We group now into groups that convey multiple filters.
         # Obtain list of tables ordered from more to fewer filters.
@@ -303,15 +303,15 @@ class ViewSearchPruning:
         print("Finished enumerating groups")
 
         # Rate all join paths after pruning
-        msg_pruning = """
-                        ######################################################################
-                        #                  Begin to rate all join paths                      #
-                        #                   We prefer join paths that                        #
-                        #                   1. More likely to be PK/FK path                  #
-                        #                   2. Use fewer join key                            #
-                        ######################################################################
-                            """
-        print(msg_pruning)
+        # msg_pruning = """
+        #                 ######################################################################
+        #                 #                  Begin to rate all join paths                      #
+        #                 #                   We prefer join paths that                        #
+        #                 #                   1. More likely to be PK/FK path                  #
+        #                 #                   2. Use fewer join key                            #
+        #                 ######################################################################
+        #                     """
+        # print(msg_pruning)
 
         table_paths = {}
         # build inverted index candidate tables -> [indexes of corresponding join paths]
@@ -350,30 +350,17 @@ class ViewSearchPruning:
             score_list.append((score, idx))
         score_list.sort(reverse=True)
         sorted_all_graphs = [(all_join_graphs[x[1]], all_filters[x[1]])for x in score_list]
-        finish_msg = """
-                        ######################################################################
-                        #      Finish Rating and Ranking, Begin Materializing Join Paths     #
-                        ######################################################################
-                    """
-        print(finish_msg)
+        # finish_msg = """
+        #                 ######################################################################
+        #                 #      Finish Rating and Ranking, Begin Materializing Join Paths     #
+        #                 ######################################################################
+        #             """
+        # print(finish_msg)
         non_empty_cnt = 0
-        start = 0
-        while start < len(sorted_all_graphs) or non_empty_cnt < offset:
-            if start + offset < len(sorted_all_graphs):
-                paths_to_materialize = sorted_all_graphs[start: start + offset]
-            else:
-                paths_to_materialize = sorted_all_graphs[start:]
-            start = start + offset
-            to_return = self.materialize_join_graphs(list_samples, paths_to_materialize)
-            for (idx, el) in enumerate(to_return):
-                if len(el) != 0:
-                    print("Materialized Join Path")
-                    for l, r in paths_to_materialize[idx][0]:
-                        print(l.source_name + "." + l.field_name + " JOIN " + r.source_name + "." + r.field_name)
-                    non_empty_cnt += 1
-                    if non_empty_cnt > offset:
-                        break
-                    yield el
+        paths_to_materialize = sorted_all_graphs[0: offset]
+        to_return = self.materialize_join_graphs(list_samples, paths_to_materialize)
+        for el in to_return:
+            yield el
 
     def get_relation(self, df, join_key, target_cols, sampling_fraction):
         df.dropna()
@@ -520,16 +507,20 @@ class ViewSearchPruning:
             #     attrs_to_project.add(l.field_name)
             #     attrs_to_project.add(r.field_name)
             idx += 1
+            join_path = ""
             materialized_virtual_schema = dpu.materialize_join_graph_sample(mjg, samples, filters, self, idx, sample_size=1000)
             # materialized_virtual_schema = dpu.materialize_join_graph(mjg, self)
             if materialized_virtual_schema is False:
                 continue  # happens when the join was an outlier
+            else:
+                for l, r in mjg:
+                    join_path += l.source_name + "-" + l.field_name + " JOIN " + r.source_name + "-" + r.field_name + "\n"
             # Create metadata to document this view
             view_metadata = dict()
             view_metadata["#join_graphs"] = len(materializable_join_graphs)
             # view_metadata["join_graph"] = self.format_join_paths_pairhops(jpg)
             view_metadata["join_graph"] = self.format_join_graph_into_nodes_edges(mjg)
-            to_return.append((materialized_virtual_schema, attrs_to_project, view_metadata))
+            to_return.append((materialized_virtual_schema, attrs_to_project, view_metadata, join_path))
             # yield materialized_virtual_schema, attrs_to_project, view_metadata
         return to_return
 
@@ -552,7 +543,7 @@ class ViewSearchPruning:
 
         table_combinations = [el for el in itertools.combinations(group_tables, 2)]
 
-        for table1, table2 in tqdm(table_combinations):
+        for table1, table2 in table_combinations:
             # Check if tables are already known to be unjoinable
             if (table1, table2) in cache_unjoinable_pairs.keys() or (table2, table1) in cache_unjoinable_pairs.keys():
                 continue  # FIXME FIXME FIXME
@@ -915,41 +906,8 @@ def start(vs, ci, attrs, values, types, number_jps=5, output_path=None, full_vie
         print("Total materializable join graphs: " + str(total_materializable_join_graphs))
 
     print("Total views: " + str(i))
-    # exit()
-
-    ###
-    # Run 4C
-    ###
-    # return
-    # groups_per_column_cardinality = v4c.main(output_path)
-    #
-    # for k, v in groups_per_column_cardinality.items():
-    #     compatible_groups = v['compatible']
-    #     contained_groups = v['contained']
-    #     complementary_group = v['complementary']
-    #     contradictory_group = v['contradictory']
-    #
-    #     print("Compatible views: " + str(len(compatible_groups)))
-    #     print("Contained views: " + str(len(contained_groups)))
-    #     print("Complementary views: " + str(len(complementary_group)))
-    #     print("Contradictory views: " + str(len(contradictory_group)))
 
 
-
-def test_intree(dod):
-    for mjp, attrs in test_dpu(dod):
-        print(mjp.head(2))
-
-
-def test_dpu(dod):
-    with open("check_debug.pkl", 'rb') as f:
-        clean_jp = pickle.load(f)
-
-    for mjp in clean_jp:
-        attrs_to_project = dpu.obtain_attributes_to_project(mjp)
-        # materialized_virtual_schema = dpu.materialize_join_path(mjp, self)
-        materialized_virtual_schema = dpu.materialize_join_graph(mjp, dod)
-        yield materialized_virtual_schema, attrs_to_project
 
 
 def main(args):

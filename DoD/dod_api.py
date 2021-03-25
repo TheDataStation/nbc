@@ -1,5 +1,5 @@
 from DoD import column_infer
-from DoD.view_search_pruning import ViewSearchPruning
+
 from knowledgerepr import fieldnetwork
 from modelstore.elasticstore import StoreHandler
 from DoD.utils import FilterType
