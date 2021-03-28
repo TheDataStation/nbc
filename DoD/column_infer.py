@@ -7,7 +7,7 @@ from collections import defaultdict
 from tabulate import tabulate
 from DoD.colors import Colors
 import ipywidgets as widgets
-from IPython.display import display, clear_output
+from IPython.display import display, clear_output, HTML
 
 class ClusterItem:
     nid = ""
@@ -94,7 +94,8 @@ class ColumnInfer:
                             c_score = min(len(sample)/len(h), len(h)/len(sample))
                             max_containment = max(max_containment, c_score)
                             hit_example.add(h)
-
+                        if max_containment < 0.5:
+                            continue
                         column_example_hit[k] += max_containment
                         example_match[(x.source_name, x.field_name)].extend(list(hit_example))
                         if hit_type[k] == FilterType.ATTR:
@@ -396,7 +397,7 @@ class ColumnInfer:
                 # tmp["sample_score"], max_column = self.get_containment_score(cluster)
                 tmp["sample_score"] = 0
                 # tmp["data"] = list(map(lambda x: (x.nid, x.source_name, x.field_name, x.tfidf_score), cluster))
-                tmp["data"] = list(map(lambda x: (x.nid, x.source_name, x.field_name, x.sample_score), cluster))
+                tmp["data"] = list(map(lambda x: (x.nid, x.source_name, x.field_name, x.sample_score, x.highlight), cluster))
                 # tmp["type"] = data_type.name
                 tmp["type"] = "object"
                 # tmp["head_values"] = list(set(max_column.highlight)) + head_values
@@ -413,7 +414,6 @@ class ColumnInfer:
             for i in range(0, len(checkboxes)):
                 if checkboxes[i].value == True:
                     selected_data.append(i)
-            print(selected_data)
             hits = viewSearch.clusters2Hits(clusters, selected_data)
             filter_drs[(clusters[0]["name"], FilterType.ATTR, column_idx)] = hits
         def on_button_all(b):
@@ -424,7 +424,7 @@ class ColumnInfer:
         checkboxes = [widgets.Checkbox(value=False, description="Cluster "+str(idx)) for idx in range(len(clusters))]
         for idx, cluster in enumerate(clusters):
             display(checkboxes[idx])
-            print(tabulate(cluster["data"], headers=['id', 'Table Name', 'Attribute Name', 'Sample Score', 'Highlight'], tablefmt='fancy_grid'))
+            display(HTML(tabulate(cluster["data"], headers=['id', 'Table Name', 'Attribute Name', 'Sample Score', 'Highlight'], tablefmt='html')))
             print('\n')
         button_confirm = widgets.Button(description="Confirm")
         button_all = widgets.Button(description="Select All")
