@@ -81,18 +81,6 @@ class ViewSearchPruning:
         return hits
 
     def virtual_schema_iterative_search(self, list_samples, filter_drs, perf_stats, max_hops=2, debug_enumerate_all_jps=False, offset=10):
-        # msg_enumerate = """
-        #             ######################################################################
-        #             #                  Begin Join Path Enumeration                       #
-        #             #    Find all join paths between every pair of candidate tables      #
-        #             #    based on Aurum API. (No known PK/FK relationships, depend on    #
-        #             #    inclusion dependency to discover approximate PK/FK)       f      #
-        #             ######################################################################
-        # """
-        # print(msg_enumerate)
-        st_stage2 = time.time()
-        # We group now into groups that convey multiple filters.
-        # Obtain list of tables ordered from more to fewer filters.
         table_fulfilled_filters = defaultdict(list)
         filter_fulfilled_tables = defaultdict(list)
         table_nid = dict()  # collect nids -- used later to obtain an access path to the tables
@@ -124,12 +112,6 @@ class ViewSearchPruning:
                     return True
                 return False
 
-            def compute_size_filter_ix(filters, candidate_group_filters_covered):
-                new_fs_set = set([id for _,_,id in filters])
-                candidate_fs_set = set([id for _,_,id in candidate_group_filters_covered])
-                ix_size = len(new_fs_set.union(candidate_fs_set)) - len(candidate_fs_set)
-                return ix_size
-
             def clear_state():
                 candidate_group_unordered.clear()
                 candidate_group_filters_covered.clear()
@@ -137,61 +119,20 @@ class ViewSearchPruning:
             def sort_candidate_group(unordered_cg):
                 ordered_cg = sorted(unordered_cg, key=lambda tup: tup[0])
                 return [x[1] for x in ordered_cg]
-
-            # Eagerly obtain groups of tables that cover as many filters as possible
-            backup = []
-            go_on = True
-            while go_on:
+            candidate_table_groups = filter_fulfilled_tables.values()
+            filters = list(filter_drs.keys())
+            import itertools
+            for group in list(itertools.product(*candidate_table_groups)):
                 candidate_group_unordered = []
-                candidate_group_filters_covered = set()
-                for i in range(len(list(table_fulfilled_filters.items()))):
-                    table_pivot, filters_pivot = list(table_fulfilled_filters.items())[i]
-                    # Eagerly add pivot
-                    candidate_group_unordered.append((filters_pivot[0][2], table_pivot)) # (the largest filter_id, table_name) - add id for further sorting
-                    candidate_group_filters_covered.update(filters_pivot)
-                    # Did it cover all filters?
-                    # if len(candidate_group_filters_covered) == len(filter_drs.items()):
-                    if covers_filters(candidate_group_filters_covered):
-                        candidate_group = sort_candidate_group(candidate_group_unordered)
-                        # print("1: " + str(table_pivot))
-                        yield (candidate_group, candidate_group_filters_covered)  # early stop
-                        # Cleaning
-                        clear_state()
-                        continue
-                    for j in range(len(list(table_fulfilled_filters.items()))):
-                        idx = i + j + 1
-                        if idx == len(table_fulfilled_filters.items()):
-                            break
-                        table, filters = list(table_fulfilled_filters.items())[idx]
-                        # new_filters = len(set(filters).union(candidate_group_filters_covered)) - len(candidate_group_filters_covered)
-                        new_filters = compute_size_filter_ix(filters, candidate_group_filters_covered)
-                        if new_filters > 0:  # add table only if it adds new filters
-                            candidate_group_unordered.append((filters[0][2], table))
-                            candidate_group_filters_covered.update(filters)
-                            if covers_filters(candidate_group_filters_covered):
-                                candidate_group = sort_candidate_group(candidate_group_unordered)
-                                # print("2: " + str(table_pivot))
-                                yield (candidate_group, candidate_group_filters_covered)
-                                clear_state()
-                                # Re-add the current pivot, only necessary in this case
-                                candidate_group_unordered.append((filters_pivot[0][2], table_pivot))
-                                candidate_group_filters_covered.update(filters_pivot)
-                    candidate_group = sort_candidate_group(candidate_group_unordered)
-                    # print("3: " + str(table_pivot))
-                    if covers_filters(candidate_group_filters_covered):
-                        yield (candidate_group, candidate_group_filters_covered)
-                    else:
-                        backup.append(([el for el in candidate_group],
-                                       set([el for el in candidate_group_filters_covered])))
-                    # Cleaning
-                    clear_state()
-                # before exiting, return backup in case that may be useful
-                # for candidate_group, candidate_group_filters_covered in backup:
-                #     yield (candidate_group, candidate_group_filters_covered)
-                go_on = False  # finished exploring all groups
+                candidate_group_filters_covered = []
+                for idx, item in enumerate(group):
+                    if item[0] not in candidate_group_unordered:
+                        candidate_group_unordered.append(item[0])
+                    f = ((filters[idx][0], item[1]), FilterType.ATTR, filters[idx][2])
+                    if f not in candidate_group_filters_covered:
+                        candidate_group_filters_covered.append(f)
+                yield (list(candidate_group_unordered), candidate_group_filters_covered)
 
-        et_stage2 = time.time()
-        perf_stats['t_stage2'] = (et_stage2 - st_stage2)
         # Find ways of joining together each group
         cache_unjoinable_pairs = defaultdict(int)
         perf_stats['time_joinable'] = 0
@@ -203,7 +144,6 @@ class ViewSearchPruning:
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             num_candidate_groups += 1
             # print("Candidate group: " + str(candidate_group))
-            num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
             # print("Covers #Filters: " + str(num_unique_filters))
 
             if len(candidate_group) == 1:
@@ -260,37 +200,12 @@ class ViewSearchPruning:
             materializable_join_graphs = []
             filters = candidate_group_filters_covered
             for jpg in join_graphs:
-                # Obtain filters that apply to this join graph
-                filters = set()
-                for l, r in jpg:
-                    if l.source_name in candidate_group:
-                        filters.update(table_fulfilled_filters[l.source_name])
-                    if r.source_name in candidate_group:
-                        filters.update(table_fulfilled_filters[r.source_name])
+                total_materializable_join_graphs += 1
+                materializable_join_graphs.append((jpg, filters))
+                all_join_graphs.append(jpg)
+                all_filters.append(filters)
 
-                # TODO: obtain join_graph score for diff metrics. useful for ranking later
-                # rank_materializable_join_graphs(materializable_join_paths, table_path, dod)
-                st_is_materializable = time.time()
-                # if query view is all attributes, then it's always materializable or we could
-                # join on a small sample and see -- we can have 2 different impls.
-                # if sum([0] + [1 for el in list_samples if el != '']) > 0:
-                # is_join_graph_valid = self.is_join_graph_materializable(jpg, table_fulfilled_filters)
-                # else:
-                is_join_graph_valid = True
-                et_is_materializable = time.time()
-                perf_stats['time_is_materializable'] += (et_is_materializable - st_is_materializable)
-                # Obtain all materializable graphs, then materialize
-                if is_join_graph_valid:
-                    total_materializable_join_graphs += 1
-                    materializable_join_graphs.append((jpg, filters))
-                    all_join_graphs.append(jpg)
-                    all_filters.append(filters)
-            # At this point we can empty is-join-graph-materializable cache and create a new one
-            # dpu.empty_relation_cache()  # TODO: If df.copy() works, then this is a nice reuse
-            st_materialize = time.time()
             to_return = []
-            et_materialize = time.time()
-            perf_stats['time_materialize'] += (et_materialize - st_materialize)
             for el in to_return:
                 if 'actually_materialized' not in perf_stats:
                     perf_stats['actually_materialized'] = 0
@@ -302,18 +217,6 @@ class ViewSearchPruning:
             perf_stats['materializable_join_graphs'].append(total_materializable_join_graphs)
 
         perf_stats["num_candidate_groups"] = num_candidate_groups
-        # print("Finished enumerating groups")
-
-        # Rate all join paths after pruning
-        # msg_pruning = """
-        #                 ######################################################################
-        #                 #                  Begin to rate all join paths                      #
-        #                 #                   We prefer join paths that                        #
-        #                 #                   1. More likely to be PK/FK path                  #
-        #                 #                   2. Use fewer join key                            #
-        #                 ######################################################################
-        #                     """
-        # print(msg_pruning)
 
         table_paths = {}
         # build inverted index candidate tables -> [indexes of corresponding join paths]
@@ -352,13 +255,7 @@ class ViewSearchPruning:
             score_list.append((score, idx))
         score_list.sort(reverse=True)
         sorted_all_graphs = [(all_join_graphs[x[1]], all_filters[x[1]])for x in score_list]
-        # finish_msg = """
-        #                 ######################################################################
-        #                 #      Finish Rating and Ranking, Begin Materializing Join Paths     #
-        #                 ######################################################################
-        #             """
-        # print(finish_msg)
-        non_empty_cnt = 0
+
         paths_to_materialize = sorted_all_graphs[0: offset]
         to_return = self.materialize_join_graphs(list_samples, paths_to_materialize)
         for el in to_return:
