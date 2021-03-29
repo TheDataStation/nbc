@@ -94,12 +94,14 @@ class ViewSearchPruning:
         # We group now into groups that convey multiple filters.
         # Obtain list of tables ordered from more to fewer filters.
         table_fulfilled_filters = defaultdict(list)
+        filter_fulfilled_tables = defaultdict(list)
         table_nid = dict()  # collect nids -- used later to obtain an access path to the tables
         for filter, hits in filter_drs.items():
             for hit in hits:
                 table = hit.source_name
                 nid = hit.nid
                 table_nid[table] = nid
+                filter_fulfilled_tables[filter].append((table, hit.field_name))
                 if filter[2] not in [id for _, _, id in table_fulfilled_filters[table]]:
                     table_fulfilled_filters[table].append(((filter[0], hit.field_name), FilterType.ATTR, filter[2]))
 
@@ -256,6 +258,7 @@ class ViewSearchPruning:
             # join graphs covers all tables in candidate_group, so if they're materializable we're good.
             total_materializable_join_graphs = 0
             materializable_join_graphs = []
+            filters = candidate_group_filters_covered
             for jpg in join_graphs:
                 # Obtain filters that apply to this join graph
                 filters = set()
