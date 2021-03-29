@@ -200,10 +200,9 @@ class ViewSearchPruning:
         all_filters = []
         for candidate_group, candidate_group_filters_covered in eager_candidate_exploration():
             num_candidate_groups += 1
-            print("")
-            print("Candidate group: " + str(candidate_group))
+            # print("Candidate group: " + str(candidate_group))
             num_unique_filters = len({f_id for _, _, f_id in candidate_group_filters_covered})
-            print("Covers #Filters: " + str(num_unique_filters))
+            # print("Covers #Filters: " + str(num_unique_filters))
 
             if len(candidate_group) == 1:
                 table = candidate_group[0]
@@ -243,7 +242,7 @@ class ViewSearchPruning:
                 if 'unjoinable_candidate_group' not in perf_stats:
                     perf_stats['unjoinable_candidate_group'] = 0
                 perf_stats['unjoinable_candidate_group'] += 1
-                print("Group: " + str(candidate_group) + " is Non-Joinable with max_hops=" + str(max_hops))
+                # print("Group: " + str(candidate_group) + " is Non-Joinable with max_hops=" + str(max_hops))
                 continue
             if 'joinable_candidate_group' not in perf_stats:
                 perf_stats['joinable_candidate_group'] = 0
@@ -300,7 +299,7 @@ class ViewSearchPruning:
             perf_stats['materializable_join_graphs'].append(total_materializable_join_graphs)
 
         perf_stats["num_candidate_groups"] = num_candidate_groups
-        print("Finished enumerating groups")
+        # print("Finished enumerating groups")
 
         # Rate all join paths after pruning
         # msg_pruning = """
@@ -508,7 +507,7 @@ class ViewSearchPruning:
             #     attrs_to_project.add(r.field_name)
             idx += 1
             join_path = ""
-            materialized_virtual_schema = dpu.materialize_join_graph_sample(mjg, samples, filters, self, idx, sample_size=1000)
+            materialized_virtual_schema = dpu.materialize_join_graph_sample(mjg, samples, filters, self, idx, sample_size=10000)
             # materialized_virtual_schema = dpu.materialize_join_graph(mjg, self)
             if materialized_virtual_schema is False:
                 continue  # happens when the join was an outlier
@@ -555,12 +554,12 @@ class ViewSearchPruning:
             # drs = self.are_paths_in_cache(table1, table2)
             paths = self.are_paths_in_cache(table1, table2)  # list of lists
             if paths is None:
-                print("\nFinding paths between " + str(table1) + " and " + str(table2))
-                print("max hops: " + str(max_hops))
+                # print("\nFinding paths between " + str(table1) + " and " + str(table2))
+                # print("max hops: " + str(max_hops))
                 s = time.time()
                 drs = self.aurum_api.paths(t1, t2, Relation.PKFK, max_hops=max_hops, lean_search=True)
                 e = time.time()
-                print("Total time: " + str((e-s)))
+                # print("Total time: " + str((e-s)))
                 paths = drs.paths()  # list of lists
                 self.place_paths_in_cache(table1, table2, paths)  # FIXME FIXME FIXME
             # paths = drs.paths()  # list of lists
