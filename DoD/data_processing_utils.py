@@ -602,10 +602,6 @@ def apply_consistent_sample(dfa, dfb, a_key, b_key, sample_size):
 
 
 def materialize_join_graph_sample(jg, samples, filters, dod, idx, sample_size=100):
-    # print("Materializing JP", idx)
-    # for l, r in jg:
-    #     print(l.source_name + "." + l.field_name + " JOIN " + r.source_name + "." + r.field_name)
-
     def build_tree(jg):
         # Build in-tree (leaves to root)
         intree = dict()  # keep reference to all nodes here

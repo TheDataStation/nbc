@@ -1,4 +1,5 @@
 from DoD import column_infer
+from DoD.view_search_pruning import ViewSearchPruning
 
 from knowledgerepr import fieldnetwork
 from modelstore.elasticstore import StoreHandler
@@ -59,12 +60,17 @@ if __name__ == '__main__':
     output_path = "/Users/gongyue/aurum-datadiscovery/test/advwResult/"
     api = DOD_API(path_model, output_path, separator)
 
-    attrs = ["", "", ""]
-    values = [["Amy", "Alberts", "European Sales Manager"],
-              ["Ryan", "Cornelsen", "Production Technician - WC40"],
-              ["Gary", "Altman", "Facilities Manager"]]
+    attrs = ["", ""]
+    # values = [["Amy", "Alberts", "European Sales Manager"],
+    #           ["Ryan", "Cornelsen", "Production Technician - WC40"],
+    #           ["Gary", "Altman", "Facilities Manager"]]
 
-
+    values = [
+             ["Amy", "F"],
+             ["Ryan", "M"],
+             ["Gary", "M"],
+             ["Ken", "M"],
+            ["Terri", "F"]]
     api.get_topk_views(attrs, values, 5)
     # print(pd.__version__)
     # print(pd.__file__)
