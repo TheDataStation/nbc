@@ -58,10 +58,17 @@ if __name__ == '__main__':
     output_path = ".//testres/"
     api = DOD_API(path_model, output_path, separator)
 
-    attrs = ["", "", ""]
-    values = [["Amy", "Alberts", "European Sales Manager"],
-              ["Ryan", "Cornelsen", "Production Technician - WC40"],
-              ["Gary", "Altman", "Facilities Manager"]]
+    attrs = ["", ""]
+    # values = [["98011", "California"], ["32804", "Florida"]]
+    # values = [["98011", "Washington"]]
+    # values = [["1000", "750"]]
+    values = [["Amy", "F"],
+              ["Ryan", "M"],
+              ["Gary", "M"],
+              ["Ken", "M"],
+              ["Terri", "F"]
+             ]
 
 
     api.get_topk_views(attrs, values, 5)
+
