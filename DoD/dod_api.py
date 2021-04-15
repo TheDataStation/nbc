@@ -37,7 +37,7 @@ class DOD_API:
         i = 0
         perf_stats = dict()
 
-        for mjp, attrs_project, metadata in self.viewSearch.virtual_schema_iterative_search(col_values, filter_drs, perf_stats,
+        for mjp, attrs_project, metadata, join_path in self.viewSearch.virtual_schema_iterative_search(col_values, filter_drs, perf_stats,
                                                                                max_hops=2,
                                                                                debug_enumerate_all_jps=False, offset=k):
             proj_view = dpu.project(mjp, attrs_project)
