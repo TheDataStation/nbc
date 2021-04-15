@@ -55,41 +55,15 @@ class DOD_API:
         print("total views:", i)
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-    path_model = "./test/"
-||||||| merged common ancestors
-    path_model = "/Users/gongyue/aurum-datadiscovery/test/advwModels/"
-=======
     path_model = "/Users/gongyue/aurum-datadiscovery/test/advwModels2/"
->>>>>>> origin/demo-yue
     separator = ","
     output_path = ".//testres/"
     api = DOD_API(path_model, output_path, separator)
 
-<<<<<<< HEAD
-    attrs = ["", ""]
-    # values = [["98011", "California"], ["32804", "Florida"]]
-    # values = [["98011", "Washington"]]
-    # values = [["1000", "750"]]
-    values = [["Amy", "F"],
-              ["Ryan", "M"],
-              ["Gary", "M"],
-              ["Ken", "M"],
-              ["Terri", "F"]
-             ]
-
-||||||| merged common ancestors
-    attrs = ["", "", ""]
-    values = [["Amy", "Alberts", "European Sales Manager"],
-              ["Ryan", "Cornelsen", "Production Technician - WC40"],
-              ["Gary", "Altman", "Facilities Manager"]]
-
-=======
     attrs = ["", ""]
     # values = [["Amy", "Alberts", "European Sales Manager"],
     #           ["Ryan", "Cornelsen", "Production Technician - WC40"],
     #           ["Gary", "Altman", "Facilities Manager"]]
->>>>>>> origin/demo-yue
 
     values = [
              ["Amy", "F"],
@@ -98,10 +72,5 @@ if __name__ == '__main__':
              ["Ken", "M"],
             ["Terri", "F"]]
     api.get_topk_views(attrs, values, 5)
-<<<<<<< HEAD
-
-||||||| merged common ancestors
-=======
     # print(pd.__version__)
     # print(pd.__file__)
->>>>>>> origin/demo-yue
