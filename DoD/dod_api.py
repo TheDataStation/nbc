@@ -1,9 +1,11 @@
 from DoD import column_infer
 from DoD.view_search_pruning import ViewSearchPruning
+
 from knowledgerepr import fieldnetwork
 from modelstore.elasticstore import StoreHandler
 from DoD.utils import FilterType
 from DoD import data_processing_utils as dpu
+import pandas as pd
 
 class DOD_API:
 
@@ -21,7 +23,7 @@ class DOD_API:
     Get top k views without user interaction
     """
     def get_topk_views(self, attrs, values, k):
-        candidate_columns, sample_score, hit_type_dict, match_dict = self.columnInfer.infer_candidate_columns(attrs, values)
+        candidate_columns, sample_score, hit_type_dict, match_dict, _ = self.columnInfer.infer_candidate_columns(attrs, values)
         results = self.columnInfer.view_spec(candidate_columns, sample_score)
 
         filter_drs = {}
@@ -53,11 +55,18 @@ class DOD_API:
         print("total views:", i)
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     path_model = "./test/"
+||||||| merged common ancestors
+    path_model = "/Users/gongyue/aurum-datadiscovery/test/advwModels/"
+=======
+    path_model = "/Users/gongyue/aurum-datadiscovery/test/advwModels2/"
+>>>>>>> origin/demo-yue
     separator = ","
     output_path = ".//testres/"
     api = DOD_API(path_model, output_path, separator)
 
+<<<<<<< HEAD
     attrs = ["", ""]
     # values = [["98011", "California"], ["32804", "Florida"]]
     # values = [["98011", "Washington"]]
@@ -69,6 +78,30 @@ if __name__ == '__main__':
               ["Terri", "F"]
              ]
 
+||||||| merged common ancestors
+    attrs = ["", "", ""]
+    values = [["Amy", "Alberts", "European Sales Manager"],
+              ["Ryan", "Cornelsen", "Production Technician - WC40"],
+              ["Gary", "Altman", "Facilities Manager"]]
 
+=======
+    attrs = ["", ""]
+    # values = [["Amy", "Alberts", "European Sales Manager"],
+    #           ["Ryan", "Cornelsen", "Production Technician - WC40"],
+    #           ["Gary", "Altman", "Facilities Manager"]]
+>>>>>>> origin/demo-yue
+
+    values = [
+             ["Amy", "F"],
+             ["Ryan", "M"],
+             ["Gary", "M"],
+             ["Ken", "M"],
+            ["Terri", "F"]]
     api.get_topk_views(attrs, values, 5)
+<<<<<<< HEAD
 
+||||||| merged common ancestors
+=======
+    # print(pd.__version__)
+    # print(pd.__file__)
+>>>>>>> origin/demo-yue

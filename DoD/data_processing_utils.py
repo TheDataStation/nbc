@@ -270,7 +270,7 @@ def read_columns(relation_path, cols):
     return df.copy()
 
 
-def read_relation_on_copy(relation_path):
+def read_relation_on_copy(relation_path, offset=1000):
     """
     This is assuming than copying a DF is cheaper than reading it back from disk
     :param relation_path:
@@ -279,7 +279,20 @@ def read_relation_on_copy(relation_path):
     if relation_path in cache:
         df = cache[relation_path]
     else:
-        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator)
+        df = pd.read_csv(relation_path, encoding='latin1', sep=data_separator, nrows=offset)
+        cache[relation_path] = df
+    return df.copy()
+
+def read_relation_on_copy2(relation_path, separator):
+    """
+    This is assuming than copying a DF is cheaper than reading it back from disk
+    :param relation_path:
+    :return:
+    """
+    if relation_path in cache:
+        df = cache[relation_path]
+    else:
+        df = pd.read_csv(relation_path, encoding='latin1', sep=separator)
         cache[relation_path] = df
     return df.copy()
 
@@ -589,10 +602,6 @@ def apply_consistent_sample(dfa, dfb, a_key, b_key, sample_size):
 
 
 def materialize_join_graph_sample(jg, samples, filters, dod, idx, sample_size=100):
-    # print("Materializing JP", idx)
-    # for l, r in jg:
-    #     print(l.source_name + "." + l.field_name + " JOIN " + r.source_name + "." + r.field_name)
-
     def build_tree(jg):
         # Build in-tree (leaves to root)
         intree = dict()  # keep reference to all nodes here
@@ -606,7 +615,7 @@ def materialize_join_graph_sample(jg, samples, filters, dod, idx, sample_size=10
                 if len(intree) == 0:
                     node = InTreeNode(l.source_name)
                     node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
-                    df = read_relation_on_copy(node_path)# FIXME FIXME FIXME
+                    df = read_relation_on_copy(node_path, offset=sample_size*2)# FIXME FIXME FIXME
                     # df = get_dataframe(node_path)
                     node.set_payload(df)
                     intree[l.source_name] = node
@@ -615,7 +624,7 @@ def materialize_join_graph_sample(jg, samples, filters, dod, idx, sample_size=10
                 if l.source_name in intree.keys():
                     rnode = InTreeNode(r.source_name)  # create node for r
                     node_path = dod.aurum_api.helper.get_path_nid(r.nid) + "/" + r.source_name
-                    df = read_relation_on_copy(node_path)# FIXME FIXME FIXME
+                    df = read_relation_on_copy(node_path, offset=sample_size*2)# FIXME FIXME FIXME
                     # df = get_dataframe(node_path)
                     rnode.set_payload(df)
                     r_parent = intree[l.source_name]
@@ -628,7 +637,7 @@ def materialize_join_graph_sample(jg, samples, filters, dod, idx, sample_size=10
                 elif r.source_name in intree.keys():
                     lnode = InTreeNode(l.source_name)  # create node for l
                     node_path = dod.aurum_api.helper.get_path_nid(l.nid) + "/" + l.source_name
-                    df = read_relation_on_copy(node_path)# FIXME FIXME FIXME
+                    df = read_relation_on_copy(node_path, offset=sample_size*2)# FIXME FIXME FIXME
                     # df = get_dataframe(node_path)
                     lnode.set_payload(df)
                     l_parent = intree[r.source_name]

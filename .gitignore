@@ -1,6 +1,5 @@
 .DS_Store
 .ipynb_checkpoints/
-*.ipynb
 .python-version
 
 # Byte-compiled / optimized / DLL files

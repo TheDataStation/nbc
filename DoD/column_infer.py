@@ -4,7 +4,10 @@ from DoD import data_processing_utils as dpu
 from api.apiutils import DRS, Operation, OP
 from DoD import view_search_4c as v4c
 from collections import defaultdict
-
+from tabulate import tabulate
+from DoD.colors import Colors
+import ipywidgets as widgets
+from IPython.display import display, clear_output, HTML
 
 class ClusterItem:
     nid = ""
@@ -53,6 +56,7 @@ class ColumnInfer:
         example_hit_dict = dict()  # dict of column_example_hit. each attribute has a example_hit dict
         hit_type_dict = dict() # dict of hit_type. each attribute has a hit_type dict
         example_match_dict = dict()
+        key_hit_dict = dict()
 
         for item in spread_sheet:
             attr = item[0]
@@ -82,6 +86,7 @@ class ColumnInfer:
                     drs_sample_col = self.remove_redundant(drs_sample, sample)
                     for x in drs_sample_col:
                         k = (x.source_name, x.field_name)
+                        key_hit_dict[k] = x
                         hit_example = set()
                         max_containment = 0
                         for h in x.highlight:
@@ -89,7 +94,8 @@ class ColumnInfer:
                             c_score = min(len(sample)/len(h), len(h)/len(sample))
                             max_containment = max(max_containment, c_score)
                             hit_example.add(h)
-
+                        if max_containment < 0.5:
+                            continue
                         column_example_hit[k] += max_containment
                         example_match[(x.source_name, x.field_name)].extend(list(hit_example))
                         if hit_type[k] == FilterType.ATTR:
@@ -119,7 +125,7 @@ class ColumnInfer:
                 # column_candidates[(attr, FilterType.ATTR, column_id)] = drs_attr
                 column_candidates[attr] = drs_attr
             column_id += 1
-        return column_candidates, example_hit_dict, hit_type_dict, example_match_dict
+        return column_candidates, example_hit_dict, hit_type_dict, example_match_dict, key_hit_dict
 
     def view_spec_benchmark(self, example_hit_dict):
         # select columns with highest containment scores
@@ -139,23 +145,30 @@ class ColumnInfer:
     def view_spec_cluster(self, all_candidates, example_hit_dict):
         # select columns with highest containment scores and its neighbors
         results = []
+        results_hits = []
         for col, sample_scores in example_hit_dict.items():
             max_score = max(sample_scores.values())
             candidates = all_candidates[col]
             result = set()
+            result_hit = set()
             for c in candidates:
                 k = (c.source_name, c.field_name)
                 if sample_scores[k] != max_score:
                     continue
                 result.add(k)
+                result_hit.add(c)
                 neighbors = self.aurum_api.content_similar_to(c)
                 for neighbor in neighbors:
                     result.add((neighbor.source_name, neighbor.field_name))
+                    result_hit.add(neighbor)
             results.append(list(result))
-        return results
+            results_hits.append(result_hit)
+        return results, results_hits
 
     def view_spec_cluster2(self, all_candidates, example_hit_dict):
         results = []
+        results_all = []
+        results_hits = []
         for col, sample_scores in example_hit_dict.items():
             candidates = all_candidates[col]
             visited = defaultdict(bool)
@@ -177,6 +190,7 @@ class ColumnInfer:
                         column_cluster[x] = target_idx
                     idx += 1
             clusters = defaultdict(list)
+            clusters_hit = defaultdict(list)
             clusters_score = defaultdict(list)
             max_score = 0
             for column, cluster_idx in column_cluster.items():
@@ -185,15 +199,25 @@ class ColumnInfer:
                 if sample_score > max_score:
                     max_score = sample_score
                 clusters[cluster_idx].append(k)
+                clusters_hit[cluster_idx].append(column)
                 clusters_score[cluster_idx].append(sample_score)
             with open('result.txt', 'a') as f:
                 f.write(str(len(candidates.data)) + " " + str(len(clusters)) + "\n")
             final_cluster = []
+            final_cluster_all = []
+            result_hit = []
             for idx, columns in clusters.items():
+                final_cluster_all.append(columns)
                 if max(clusters_score[idx]) == max_score:
                     final_cluster.extend(columns)
+            for idx, columns in clusters_hit.items():
+                if max(clusters_score[idx]) == max_score:
+                    result_hit.extend(columns)
+
             results.append(final_cluster)
-        return results
+            results_all.append(final_cluster_all)
+            results_hits.append(result_hit)
+        return results, results_all, results_hits
 
 
     def view_spec(self, all_candidates, example_hit_dict):
@@ -260,6 +284,22 @@ class ColumnInfer:
                         result.add(k)
             results.append(list(result))
         return results
+
+    def get_purity(self, results, gt_path):
+        df = dpu.read_relation_on_copy(gt_path)
+        groundTruth = []
+        for _, row in df.iterrows():
+            groundTruth.append((row['candidate_table'].replace("____", "_"), row['candidate_col_name']))
+        for result in results:
+            for cluster in result:
+                TP, FP, FN = 0, 0, 0
+                for x in cluster:
+                    if x in groundTruth:
+                        TP += 1
+                    else:
+                        FP += 1
+                score = TP/len(cluster)
+                print(score)
 
     def get_statistics(self, results, gt_path):
         df = dpu.read_relation_on_copy(gt_path)
@@ -339,7 +379,7 @@ class ColumnInfer:
         return clusters.values()
 
     def get_clusters(self, attrs, values, types):
-        candidate_columns, sample_score, hit_type_dict, match_dict = self.infer_candidate_columns(attrs, values)
+        candidate_columns, sample_score, hit_type_dict, match_dict, _ = self.infer_candidate_columns(attrs, values)
         attr_clusters = []
         idx = 0
         for column, candidates in candidate_columns.items():
@@ -348,7 +388,7 @@ class ColumnInfer:
             clusters_list = []
             for cluster in clusters:
                 tmp = dict()
-                head_values, data_type = self.get_head_values_and_type(cluster[0], 5)
+                # head_values, data_type = self.get_head_values_and_type(cluster[0], 5)
                 # if len(head_values) == 0 or data_type.name != types[idx]:
                 #     continue       # discard empty columns
                 # if len(head_values) == 0:
@@ -367,6 +407,88 @@ class ColumnInfer:
             attr_clusters.append(sorted_list)
             idx += 1
         return attr_clusters
+    
+    def show_clusters(self, clusters, filter_drs, viewSearch, column_idx):
+        def on_button_confirm(b):
+            selected_data = []
+            for i in range(0, len(checkboxes)):
+                if checkboxes[i].value == True:
+                    selected_data.append(i)
+            hits = viewSearch.clusters2Hits(clusters, selected_data)
+            filter_drs[(clusters[0]["name"], FilterType.ATTR, column_idx)] = hits
+        def on_button_all(b):
+            for checkbox in checkboxes:
+                checkbox.value = True
+
+        print(Colors.OKBLUE + "NAME: " + clusters[0]["name"] + Colors.CEND)
+        checkboxes = [widgets.Checkbox(value=False, description="Cluster "+str(idx)) for idx in range(len(clusters))]
+        for idx, cluster in enumerate(clusters):
+            display(checkboxes[idx])
+            display(HTML(tabulate(cluster["data"], headers=['id', 'Table Name', 'Attribute Name', 'Sample Score', 'Highlight'], tablefmt='html')))
+            print('\n')
+        button_confirm = widgets.Button(description="Confirm")
+        button_all = widgets.Button(description="Select All")
+        button_confirm.on_click(on_button_confirm)
+        button_all.on_click(on_button_all)
+        display(widgets.HBox([button_confirm, button_all]))
+
+    def evaluation(self, attrs, values, gt_path):
+        candidate_columns, sample_score, hit_type_dict, match_dict = self.infer_candidate_columns(attrs, values)
+        results = []
+        for _, columns in candidate_columns.items():
+            results.append([(c.source_name, c.field_name) for c in columns])
+
+        print("method1")
+        stats_truth = self.get_statistics(results, gt_path)
+        self.print_stats(stats_truth, len(values[0]) / 3)
+
+        print("method2")
+        results = self.view_spec_benchmark(sample_score)
+        stats = self.get_statistics(results, gt_path)
+        self.print_stats(stats, len(values[0]) / 3)
+
+        print("method3")
+        results = self.view_spec_cluster(candidate_columns, sample_score)
+        stats = self.get_statistics(results, gt_path)
+        self.print_stats(stats, len(values[0]) / 3)
+
+        print("method4")
+        results, results_all = self.view_spec_cluster2(candidate_columns, sample_score)
+        tats = self.get_statistics(results, gt_path)
+        self.print_stats(stats, len(values[0]) / 3)
+
+    def view_search_evaluation(self, attrs, values):
+        candidate_columns, sample_score, hit_type_dict, match_dict, hit_dict = self.infer_candidate_columns(attrs, values)
+        results = []
+        for _, columns in candidate_columns.items():
+            results.append([(c.source_name, c.field_name) for c in columns])
+
+        num1 = self.get_candidate_groups_num(results)
+
+        results = self.c(sample_score)
+        num2 = self.get_candidate_groups_num(results)
+
+        results = self.view_spec_cluster(candidate_columns, sample_score)
+        num3 = self.get_candidate_groups_num(results)
+
+        results, results_all = self.view_spec_cluster2(candidate_columns, sample_score)
+        num4 = self.get_candidate_groups_num(results)
+
+        print(num1, num2, num3, num4)
+
+    def get_candidate_groups_num(self, results):
+        candidate_groups_num = 1
+        prv_result = None
+        num1 = len(set(results[0]).difference(results[1]))
+        num2 = len(set(results[1]).difference(results[0]))
+        # results.sort(key=len)
+        # for result in results:
+        #     if prv_result is None:
+        #         candidate_groups_num *= len(result)
+        #     else:
+        #         candidate_groups_num *= max(len(set(result).difference(prv_result)), len(prv_result.difference(set(result))))
+        #     prv_result = set(result)
+        return num1*num2
 
     def get_head_values_and_type(self, clusterItem, offset):
         path = self.get_path(clusterItem.nid, clusterItem.source_name)
