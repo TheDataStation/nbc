@@ -1,7 +1,7 @@
 bitarray==0.8.1
 colorama==0.3.7 # not explicitly used - maybe can be removed
 cycler==0.10 # not explicitly used - maybe can be removed
-datasketch==0.2.4
+datasketch==1.5.3
 elasticsearch==6.0.0
 Flask>=1.0.2
 Flask-Cors>=2.1.2
