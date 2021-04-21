@@ -186,7 +186,7 @@ class ViewSearchPruning:
                 if 'unjoinable_candidate_group' not in perf_stats:
                     perf_stats['unjoinable_candidate_group'] = 0
                 perf_stats['unjoinable_candidate_group'] += 1
-                print("Group: " + str(candidate_group) + " is Non-Joinable with max_hops=" + str(max_hops))
+                # print("Group: " + str(candidate_group) + " is Non-Joinable with max_hops=" + str(max_hops))
                 continue
             if 'joinable_candidate_group' not in perf_stats:
                 perf_stats['joinable_candidate_group'] = 0

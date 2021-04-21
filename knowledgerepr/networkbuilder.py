@@ -235,6 +235,7 @@ def build_content_sim_mh_text(network, mh_signatures, t):
     def connect(nid1, nid2, score):
         network.add_relation(nid1, nid2, Relation.CONTENT_SIM, score)
 
+    f = open('relation.txt', 'w')
     # Materialize signatures for convenience
     mh_sig_obj = []
 
@@ -254,10 +255,15 @@ def build_content_sim_mh_text(network, mh_signatures, t):
     # Query objects
     for nid, mh_obj in mh_sig_obj:
         res = content_index.query(mh_obj, network.get_size_of(nid))
+        info1 = network.get_info_for([nid])
+        (_, _, sn1, fn1) = info1[0]
         for r_nid in res:
             if r_nid != nid:
+                info2 = network.get_info_for([r_nid])
+                (_, _, sn2, fn2) = info2[0]
+                relation = sn1 + "-" + fn1 + "," + sn2 + "-" + fn2 + "\n"
+                f.write(relation)
                 connect(nid, r_nid, 1)
-
     return content_index
 
 
@@ -343,7 +349,7 @@ def build_content_sim_relation_num_overlap_distr_indexed(network, id_sig):
 
 
 def build_content_sim_relation_num_overlap_distr(network, id_sig, table_path):
-
+    f = open('relationship.txt', 'w')
     def compute_overlap(ref_left, ref_right, left, right):
         ov = 0
         if left >= ref_left and right <= ref_right:
@@ -385,9 +391,6 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig, table_path):
 
     for ref in candidate_entries:
         ref_nid, ref_domain, ref_x_min, ref_x_left, ref_x_right, ref_x_max = ref
-
-        if ref_nid == '2316507623':
-            debug = True
 
         if ref_domain == 0:
             single_points.append(ref)
@@ -433,7 +436,8 @@ def build_content_sim_relation_num_overlap_distr(network, id_sig, table_path):
                     candidate_df = cache[(sn2, fn2)]
                 if set(candidate_df).issubset(ref_df):
                     connect(candidate_nid, ref_nid, 1, inddep=True)
-
+                    relation = sn1 + "-" + fn1 + "," + sn2 + "-" + fn2 + "\n"
+                    f.write(relation)
             #     if candidate_x_min >= ref_x_min and candidate_x_max <= ref_x_max:
             #         # inclusion relation
             #         # if candidate_x_min >= 0:
