@@ -5,8 +5,8 @@ from DoD.view_search_pruning import ViewSearchPruning
 from knowledgerepr import fieldnetwork
 from modelstore.elasticstore import StoreHandler
 
-model_path = "/Users/gongyue/aurum-datadiscovery/test/advwModels/"
-output_path = "/Users/gongyue/aurum-datadiscovery/test/advwResult/"
+model_path = "/model/"
+output_path = "/notebooks/testres/"
 sep = ","
 
 store_client = StoreHandler()
