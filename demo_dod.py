@@ -205,11 +205,19 @@ def show_views():
         display(views[view_id][0])
         print(views[view_id][1])
 
+    @output.capture()
+    def on_button_download(b):
+        global view_id
+        proj_view.to_csv(output_path + "view_" + str(view_id) + ".csv", encoding='latin1', index=False)
+        print("Download Success!")
+
     button_next_2 = widgets.Button(description="Next")
     button_prev_2 = widgets.Button(description="Prev")
-    display(widgets.HBox([button_prev_2, button_next_2]))
+    download_btn = widgets.Button(description="Download")
+    display(widgets.HBox([button_prev_2, button_next_2, download_btn]))
     button_next_2.on_click(on_button_next_view)
     button_prev_2.on_click(on_button_prev_view)
+    download_btn.on_click(on_button_download)
     initial_show_view()
     display(output)
     print("total views:", len(views))
