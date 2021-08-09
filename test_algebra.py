@@ -187,8 +187,7 @@ class TestAlgebraHelpers(unittest.TestCase):
     def test_hit_to_drs_with_table_mode(self):
         self.api._network.get_hits_from_table = MagicMock()
         hit = namedtuple(
-            'Hit', 'nid, db_name, source_name, field_name, score',
-            verbose=False)
+            'Hit', 'nid, db_name, source_name, field_name, score')
         hit.source_name = 'table'
 
         self.api._hit_to_drs(hit=hit, table_mode=True)
