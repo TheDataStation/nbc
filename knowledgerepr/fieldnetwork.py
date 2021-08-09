@@ -78,14 +78,14 @@ class FieldNetwork:
         return hits
 
     def get_cardinality_of(self, node_id):
-        c = self.__G.node[node_id]
+        c = self.__G.nodes[node_id]
         card = c['cardinality']
         if card is None:
             return 0  # no cardinality is like card 0
         return card
 
     def get_size_of(self, node_id):
-        c = self.__G.node[node_id]
+        c = self.__G.nodes[node_id]
         size = c['size']
         return size
 
