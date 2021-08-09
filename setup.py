@@ -24,5 +24,5 @@ setuptools.setup(
     package_dir={"": "."},
     packages=setuptools.find_packages(where="."),
     py_modules=["algebra", "config", "server_config"],
-    python_requires=">=3.6,<3.7",
+    python_requires=">=3.6",
 )
