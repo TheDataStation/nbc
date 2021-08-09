@@ -7,7 +7,7 @@ Flask>=1.0.2
 Flask-Cors>=2.1.2
 matplotlib>=3.1.1
 mock>=2.0.0
-networkx==1.11
+networkx>=2.4
 nltk>=3.1
 numpy>=1.17
 ontospy>=1.7.3
