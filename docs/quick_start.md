@@ -38,7 +38,7 @@ So is this *exactly* JVM 8, or should gradle be updated?
 
 ```shell
 $> cd ddprofiler
-$> bash build.sh 
+$> ./build.sh 
 ```
 
 #### Deploying Elasticsearch (tested with 6.0.0)
