@@ -1,6 +1,13 @@
 # notebook
 FROM jupyter/scipy-notebook
 
+USER root
+# needed for bitarray install
+RUN apt-get update && apt-get install -y gcc
+
+USER ${NB_UID}
+
+
 RUN pip install \
     bitarray \
     dataset \
@@ -9,10 +16,12 @@ RUN pip install \
     nltk \
     path.py
 
-# Prebuild matplotlib font cache
-# Otherwise the first time someone does this is a notebook, they'll see warning
-# messages and have to wait.
-RUN python -c "import matplotlib; matplotlib.use('TkAgg'); import matplotlib.pyplot"
+
+# Previously this docker file had the following to prebuild the matplotlib font cache
+# (Otherwise the first time someone does this is a notebook, they'll see warning
+# messages and have to wait.)
+# However, this command fails (perhaps because of recent matplotlib changes?)
+# RUN python -c "import matplotlib; matplotlib.use('TkAgg'); import matplotlib.pyplot"
 
 COPY . /home/$NB_USER/work/
 
