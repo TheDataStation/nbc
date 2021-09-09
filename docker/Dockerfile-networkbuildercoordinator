@@ -37,4 +37,4 @@ VOLUME /output
 
 WORKDIR /aurum
 
-CMD ["python3", "networkbuildercoordinator.py", "--opath", "/output"]
+CMD ["python3", "networkbuildercoordinator.py", "--opath", "/output", "--tpath", "/data/adventureWork/"]
