@@ -1,0 +1,15 @@
+name: CI_nbc
+
+on: push
+
+jobs:
+  basic-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+
+    - name: docker build
+      uses: docker/build-push-action@master
+      with:
+        context: ./
+        push: false
