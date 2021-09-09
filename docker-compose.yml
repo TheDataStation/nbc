@@ -28,6 +28,18 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.0.1
     volumes:
       - ./data/elasticsearch:/usr/share/elasticsearch/data
+      # I get permission problems with this mount: it is owned by root when
+      # initially created; but elasticsearch is running (probably) as a
+      # regular unix user. I chmoded the directory to see if that fixes it
+      # but that's not a nice fix.
+      # I also get this error as elasticsearch starts:
+      # [1]: max virtual memory areas vm.max_map_count [65530] is too low, increase to at least [262144]
+      # which doesn't happen in my manually installed elasticsearch in
+      # integration/ docker container
+      # It looks like that is a property of my host env, not of the docker
+      # env - unclear why it doesn't happen for manual launches.
+      # To reconfigure my host env:
+      # sysctl -w vm.max_map_count=262144
     ports:
       - 9200:9200
       - 9300:9300
@@ -41,16 +53,23 @@ services:
       - elasticsearch
     image: aurum/ddprofiler:0.1
     build:
-      context: .
-      dockerfile: docker/Dockerfile-ddprofiler
+      context: ../ddprofiler
+      dockerfile: ../ddprofiler/Dockerfile
     volumes:
       - ./data:/data
-    command: " --store.server elasticsearch --sources /data/mitdwhdata.yml"  # "<profiler args here>"
+    command: " --store.server elasticsearch --sources /data/adventureWork.yaml"  # "<profiler args here>"
+    # this /data/mitdwhdata.yml file doesn't exist in the repo and was externally provided.
+    # more recent work has been using eg. adventureWorks and zip codes, so those files
+    # should be provided instead - and is there a way to make this be done automatically
+    # in the context of docker-context, or a wrapper?
     networks:
       aurum_net:
         aliases:
           - profiler
 
+  # TODO: why is this different from the above profiler commmand?
+  # profiler is also a one-off command so probably shouldn't run as a service
+  # but be run as one-off like the nbc example.
   nbc:
     depends_on:
       - elasticsearch
@@ -59,6 +78,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile-networkbuildercoordinator
     volumes:
+      - ./data:/data
       - ./data/models:/output
     networks:
       aurum_net:
