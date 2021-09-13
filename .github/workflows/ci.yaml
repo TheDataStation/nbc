@@ -13,3 +13,12 @@ jobs:
       with:
         context: ./
         push: false
+
+  integration-test-aurum:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 20
+    steps:
+      - uses: TheDataStation/integration/.github/actions/integ-aurum@master
+        with:
+          nbc_repository: ${{ github.repository }}
+          nbc_commit: ${{ github.ref }}
