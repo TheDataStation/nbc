@@ -19,9 +19,11 @@ RUN apt-get update && \
 # Installs upgraded pip3 as pip3.4. pip3 continues to refer to apt's pip3.
 RUN pip3 install --upgrade pip
 
+COPY --from=aurum/aurum-common /aurum-common/dist/aurum-common-0.1.0.tar.gz /tmp/
+
 COPY requirements.txt /tmp/
 
-RUN pip3 install -r /tmp/requirements.txt --no-cache-dir --ignore-installed
+RUN pip3 install -r /tmp/requirements.txt /tmp/aurum-common-0.1.0.tar.gz --no-cache-dir --ignore-installed
 
 RUN python3 -c "import matplotlib; import matplotlib.pyplot"
 
